@@ -20,7 +20,11 @@ done = False
 
 # varianta 1 facem cu monte carlo tree search
 
+# docs
+# https://www.geeksforgeeks.org/ml-monte-carlo-tree-search-mcts/
 # https://medium.com/@ishaan.gupta0401/monte-carlo-tree-search-application-on-chess-5573fc0efb75
+
+# implementare
 # https://github.com/Ish2K/Chess-Bot-AI-Algorithms/blob/main/Git_chess/monte_carlo_implementation.py
 
 
