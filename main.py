@@ -3,13 +3,44 @@ import gym_chess
 import random
 import time
 import numpy as np
+from treelib import Node, Tree
+from math import log,sqrt,e,inf
+
 
 env = gym.make('Chess-v0')
-print(env.render())
 
 env.reset()
 done = False
 
+class nodeInfo:
+    def __init__(self):
+        self.state = []
+        self.action = ''
+        self.N = 0
+        self.n = 0
+        self.v = 0
+
+print(env)
+
+
+# HOW CAN WE GET THE BOARD FROM ENV??
+
+tree = Tree()
+tree.create_node("Harry", "harry")  # root node
+info = nodeInfo()
+print(info.state)
+env.step(env.legal_moves[0])
+info2 = nodeInfo()
+info2.state = env.observation_space
+print(info2.state)
+tree.create_node("Jane", 'jane', parent="harry", data=info)
+tree.create_node("Bill", "bill", parent="harry")
+tree.create_node("Diane", "diane", parent="jane")
+tree.create_node("Mary", "mary", parent="diane")
+
+node =tree.create_node("Mark", "mark", parent="jane")
+print(tree.get_node('jane').data.state)
+tree.show()
 
 # environment : Chess Table
 # agent : Players
@@ -17,6 +48,7 @@ done = False
 # actions - legal_actions, a lot, not constant
 # rewards - not defined
 # episodes - not defined
+
 
 # varianta 1 facem cu monte carlo tree search
 
@@ -33,8 +65,7 @@ done = False
 # miscari de sah rate-uite : https://www.kaggle.com/ethanmai/chess-moves
 
 
-
-#COD DIN LABURI:
+# COD DIN LABURI:
 
 #
 # def runEpisode(env, policy, maxSteps=100):
