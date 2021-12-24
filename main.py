@@ -3,15 +3,24 @@ import gym_chess
 import random
 import time
 import numpy as np
+import chess.engine
 from treelib import Node, Tree
 from math import log,sqrt,e,inf
-
 
 env = gym.make('Chess-v0')
 
 env.reset()
-done = False
 
+# chess-v0 usage
+print(env.legal_moves)
+board,reward,done,info = env.step(env.legal_moves[0])
+print(env.render())
+board2,reward2,done2,info2 = env.step(env.legal_moves[0])
+print(env.render())
+
+
+
+# nod din arbore
 class nodeInfo:
     def __init__(self):
         self.state = []
@@ -23,13 +32,11 @@ class nodeInfo:
 print(env)
 
 
-# HOW CAN WE GET THE BOARD FROM ENV??
-
+#example of treelib
 tree = Tree()
 tree.create_node("Harry", "harry")  # root node
 info = nodeInfo()
 print(info.state)
-env.step(env.legal_moves[0])
 info2 = nodeInfo()
 info2.state = env.observation_space
 print(info2.state)
@@ -38,7 +45,7 @@ tree.create_node("Bill", "bill", parent="harry")
 tree.create_node("Diane", "diane", parent="jane")
 tree.create_node("Mary", "mary", parent="diane")
 
-node =tree.create_node("Mark", "mark", parent="jane")
+node = tree.create_node("Mark", "mark", parent="jane")
 print(tree.get_node('jane').data.state)
 tree.show()
 
@@ -49,8 +56,6 @@ tree.show()
 # rewards - not defined
 # episodes - not defined
 
-
-# varianta 1 facem cu monte carlo tree search
 
 # docs
 # https://www.geeksforgeeks.org/ml-monte-carlo-tree-search-mcts/
@@ -63,93 +68,3 @@ tree.show()
 # Other
 
 # miscari de sah rate-uite : https://www.kaggle.com/ethanmai/chess-moves
-
-
-# COD DIN LABURI:
-
-#
-# def runEpisode(env, policy, maxSteps=100):
-#     # We count here the total
-#     total_reward = 0
-#
-#     # THis is how we reset the environment to an initial state, it returns the observation.
-#     # As documented, in this case the observation is the state where the agent currently is positionaed,
-#     # , which is a number in [0, nS-1]. We can use local function stateToRC to get the row and column of the agent
-#     # The action give is in range [0, nA-1], check the enum defined above to understand what each number means
-#     obs = env.reset()
-#     for t in range(maxSteps):
-#         # Draw the environment on screen
-#         env.render()
-#         # Sleep a bit between decisions
-#         time.sleep(0.25)
-#
-#         # Here we sample an action from our policy, we consider it deterministically at this point
-#         action = policy[obs]
-#
-#         # Hwere we interact with the enviornment. We give it an action to do and it returns back:
-#         # - the new observation (observable state by the agent),
-#         # - the reward of the action just made
-#         # - if the simulation is done (terminal state)
-#         # - last parameters is an "info" output, we are not interested in this one that's why we ignore the parameter
-#         newObs, reward, done, _ = env.step(action)
-#         print(f"Agent was in state {obs}, took action {action}, now in state {newObs}")
-#         obs = newObs
-#
-#         total_reward += reward
-#         # Close the loop before maxSteps  if we are in a terminal state
-#         if done:
-#             break
-#
-#     if not done:
-#         print(f"The agent didn't reach a terminal state in {maxSteps} steps.")
-#     else:
-#         print(f"Episode reward: {total_reward}")
-#     env.render()  # One last  rendering of the episode.
-#
-#
-# def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3):
-#     """Evaluate the value function from a given policy.
-#     Parameters
-#     ----------
-#     P, nS, nA, gamma:
-#         defined at beginning of file
-#     policy: np.array[nS]
-#         The policy to evaluate. Maps states to actions, deterministic !
-#     tol: float
-#         Terminate policy evaluation when
-#             max |value_function(s) - prev_value_function(s)| < tol
-#     Returns
-#     -------
-#     value_function: np.ndarray[nS]
-#         The value function of the given policy, where value_function[s] is
-#         the value of state s
-#     """
-#     # Init with 0 for all states,
-#     # Remember that terminal states MUST have 0 always whatever you initialize them with here
-#     value_function = np.zeros(nS)
-#
-#     ############################
-#     # YOUR IMPLEMENTATION HERE #
-#     maxChange = np.inf
-#     numIters = 0
-#     while maxChange > tol:
-#         numIters += 1
-#         maxChange = -np.inf
-#         for s in range(nS):
-#             a = policy[s]  # We have a deterministic policy, no need to iterate over actions in this case
-#
-#             # Let's check the next moves we get from starting in state s and applying action a
-#             new_value_func = 0.0
-#             for nextMove in P[s][a]:
-#                 probability, nextstate, reward, terminal = nextMove
-#                 new_value_func += probability * (reward + gamma * value_function[
-#                     nextstate])  # if policy wouldn't be deterministic  we would have to multiply all this with probability given by each a, pi(a|s)
-#
-#             maxChange = max(maxChange, abs(new_value_func - value_function[s]))
-#             value_function[s] = new_value_func
-#
-#     print(f"Policy evaluation converged after {numIters} iterations")
-#
-#     ############################
-#
-#     return value_function
