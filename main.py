@@ -197,12 +197,9 @@ class nodeInfo:
 env.reset()
 whites_turn = True
 moves = 0
-pgn = []
-evaluations = []
-sm = 0
-cnt = 0
 board = chess.Board()
 terminal = False
+nodes = []
 
 #cod scris de mine
 while not terminal:
@@ -215,7 +212,7 @@ while not terminal:
 
     print(env.render())
     print("\n"*10)
-    print(root)
+    nodes.append(root)
     
     board,reward,terminal,info = env.step(board.parse_san(result))
     whites_turn = 1-whites_turn
