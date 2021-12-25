@@ -8,6 +8,8 @@ import chess
 from treelib import Node, Tree
 from math import log,sqrt,e,inf
 
+from paprika import *
+
 env = gym.make('Chess-v0')
 
 # chess-v0 usage
@@ -121,6 +123,7 @@ def mcts_pred(curr_node,over,white,iterations=10):
         map_state_move[child] = i
     while(iterations>0):
         if(white):
+            #selecting node to expand
             idx = -1
             max_ucb = -inf
             sel_child = None
@@ -151,6 +154,7 @@ def mcts_pred(curr_node,over,white,iterations=10):
 
             curr_node = rollback(state,reward)
             iterations-=1
+
     if(white):
         
         mx = -inf
@@ -177,10 +181,11 @@ def mcts_pred(curr_node,over,white,iterations=10):
 
 
 # nod din arbore
+@to_string
 class nodeInfo:
     def __init__(self):
-        self.state = []
-        self.action = ''
+        self.state = [] # board
+        self.action = '' #action
         self.children = set()
         self.parent = None
         self.N = 0
@@ -206,8 +211,11 @@ while not terminal:
     root.state = board
 
     result = mcts_pred(root,board.is_game_over(),whites_turn)
+    root.action = str(board.parse_san(result))
+
     print(env.render())
     print("\n"*10)
+    print(root)
     
     board,reward,terminal,info = env.step(board.parse_san(result))
     whites_turn = 1-whites_turn
