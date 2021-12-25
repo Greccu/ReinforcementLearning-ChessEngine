@@ -22,88 +22,72 @@ env = gym.make('Chess-v0')
 
 # board,a,b,info = env.step(env.legal_moves[0])
 
-#example of treelib
-# tree = Tree()
-# tree.create_node("Harry", "harry")  # root node
-# info = nodeInfo()
-# print(info.state)
-# info2 = nodeInfo()
-# info2.state = env.observation_space
-# print(info2.state)
-# tree.create_node("Jane", 'jane', parent="harry", data=info)
-# tree.create_node("Bill", "bill", parent="harry")
-# tree.create_node("Diane", "diane", parent="jane")
-# tree.create_node("Mary", "mary", parent="diane")
 
-# node = tree.create_node("Mark", "mark", parent="jane")
-# print(tree.get_node('jane').data.state)
-# tree.show()
+exploration_constant = 2
 
 def ucb1(curr_node):
-    ans = curr_node.v+2*(sqrt(log(curr_node.N+e+(10**-6))/(curr_node.n+(10**-10))))
-    return ans
+    return curr_node.exploitation+exploration_constant*(sqrt(log(curr_node.parentVisits+e+(10**-6))/(curr_node.visits+(10**-10))))
 
+#choose best child
+def selection(curr_node):
+    children_ucbs = [ucb1(child) for child in curr_node.children]
+    sel_node = None
+    sel_node = list(curr_node.children)[np.argmax(children_ucbs)]
+    return sel_node
+
+#use to teach
 def rollout(curr_node):
     
     if(curr_node.state.is_game_over()):
+        print(curr_node.white)
+        print(curr_node.state)
+        print(curr_node.state.result())
+
         board = curr_node.state
-        if(board.result()=='1-0'):
-            #print("h1")
-            return (1,curr_node)
-        elif(board.result()=='0-1'):
-            #print("h2")
-            return (-1,curr_node)
+        if (curr_node.white):
+            if(board.result()=='1-0'):
+                return (-1,curr_node)
+            elif(board.result()=='0-1'):
+                return (1,curr_node)
+            else:
+                return (0.5,curr_node)
         else:
-            return (0.5,curr_node)
+            if(board.result()=='1-0'):
+                return (1,curr_node)
+            elif(board.result()=='0-1'):
+                return (-1,curr_node)
+            else:
+                return (0.5,curr_node)
+
     
     all_moves = [curr_node.state.san(i) for i in list(curr_node.state.legal_moves)]
-    
+
     for i in all_moves:
         tmp_state = chess.Board(curr_node.state.fen())
         tmp_state.push_san(i)
-        child = nodeInfo()
+        child = node()
+        child.white = curr_node.white
         child.state = tmp_state
         child.parent = curr_node
         curr_node.children.add(child)
+
+
     rnd_state = random.choice(list(curr_node.children))
 
     return rollout(rnd_state)
 
+
 def expand(curr_node,white):
     if(len(curr_node.children)==0):
         return curr_node
-    max_ucb = -inf
-    if(white):
-        idx = -1
-        max_ucb = -inf
-        sel_child = None
-        for i in curr_node.children:
-            tmp = ucb1(i)
-            if(tmp>max_ucb):
-                idx = i
-                max_ucb = tmp
-                sel_child = i
+    return expand(selection(curr_node),white)
 
-        return(expand(sel_child,0))
-
-    else:
-        idx = -1
-        min_ucb = inf
-        sel_child = None
-        for i in curr_node.children:
-            tmp = ucb1(i)
-            if(tmp<min_ucb):
-                idx = i
-                min_ucb = tmp
-                sel_child = i
-
-        return expand(sel_child,1)
 
 def rollback(curr_node,reward):
-    curr_node.n+=1
-    curr_node.v+=reward
+    curr_node.visits+=1
+    curr_node.exploitation+=reward
     while(curr_node.parent!=None):
-        curr_node.N+=1
+        curr_node.parentVisits+=1
         curr_node = curr_node.parent
     return curr_node
 
@@ -113,84 +97,41 @@ def mcts_pred(curr_node,over,white,iterations=10):
     all_moves = [curr_node.state.san(i) for i in list(curr_node.state.legal_moves)]
     map_state_move = dict()
     
-    for i in all_moves:
+    for move in all_moves:
         tmp_state = chess.Board(curr_node.state.fen())
-        tmp_state.push_san(i)
-        child = nodeInfo()
+        tmp_state.push_san(move)
+        child = node()
         child.state = tmp_state
         child.parent = curr_node
         curr_node.children.add(child)
-        map_state_move[child] = i
+        map_state_move[child] = move
+
     while(iterations>0):
-        if(white):
             #selecting node to expand
-            idx = -1
-            max_ucb = -inf
-            sel_child = None
-            for i in curr_node.children:
-                tmp = ucb1(i)
-                if(tmp>max_ucb):
-                    idx = i
-                    max_ucb = tmp
-                    sel_child = i
-            ex_child = expand(sel_child,0)
+            sel_child = selection(curr_node)
+
+            ex_child = expand(sel_child,white)
             reward,state = rollout(ex_child)
             curr_node = rollback(state,reward)
             iterations-=1
-        else:
-            idx = -1
-            min_ucb = inf
-            sel_child = None
-            for i in curr_node.children:
-                tmp = ucb1(i)
-                if(tmp<min_ucb):
-                    idx = i
-                    min_ucb = tmp
-                    sel_child = i
 
-            ex_child = expand(sel_child,1)
+    sel_move = map_state_move[list(curr_node.children)[np.argmax([ucb1(child) for child in curr_node.children])]]
+    return sel_move
 
-            reward,state = rollout(ex_child)
-
-            curr_node = rollback(state,reward)
-            iterations-=1
-
-    if(white):
-        
-        mx = -inf
-        idx = -1
-        selected_move = ''
-        for i in (curr_node.children):
-            tmp = ucb1(i)
-            if(tmp>mx):
-                mx = tmp
-                selected_move = map_state_move[i]
-        return selected_move
-    else:
-        mn = inf
-        idx = -1
-        selected_move = ''
-        for i in (curr_node.children):
-            tmp = ucb1(i)
-            if(tmp<mn):
-                mn = tmp
-                selected_move = map_state_move[i]
-        return selected_move
-
-#final cod copiat
 
 
 # nod din arbore
 @to_string
-class nodeInfo:
+class node:
     def __init__(self):
         self.state = [] # board
         self.action = '' #action
+        self.white = True
         self.children = set()
         self.parent = None
-        self.N = 0
-        self.n = 0
-        self.v = 0
+        self.parentVisits = 0
+        self.visits = 0
+        self.exploitation = 0
 
 
 #init
@@ -201,15 +142,16 @@ board = chess.Board()
 terminal = False
 nodes = []
 
-#cod scris de mine
+#alb e cu litere mici
 while not terminal:
     all_moves = env.legal_moves
-    root = nodeInfo()
+    root = node()
     root.state = board
+    root.white = whites_turn
 
     result = mcts_pred(root,board.is_game_over(),whites_turn)
     root.action = str(board.parse_san(result))
-
+    
     print(env.render())
     print("\n"*10)
     nodes.append(root)
@@ -217,6 +159,7 @@ while not terminal:
     board,reward,terminal,info = env.step(board.parse_san(result))
     whites_turn = 1-whites_turn
     moves+=1
+    
     
 
 
