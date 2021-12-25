@@ -22,6 +22,9 @@ env = gym.make('Chess-v0')
 
 # board,a,b,info = env.step(env.legal_moves[0])
 
+# VERIFICA SA AIBA SENS CE GENEREZI TU AICI IN MONTE CARLO SEARCH TREE
+
+# PAS CU PAS
 
 exploration_constant = 2
 
@@ -39,9 +42,9 @@ def selection(curr_node):
 def rollout(curr_node):
     
     if(curr_node.state.is_game_over()):
-        print(curr_node.white)
-        print(curr_node.state)
-        print(curr_node.state.result())
+        # print(curr_node.white)
+        # print(curr_node.state)
+        # print(curr_node.state.result())
 
         board = curr_node.state
         if (curr_node.white):
@@ -59,7 +62,7 @@ def rollout(curr_node):
             else:
                 return (0.5,curr_node)
 
-    
+    # verifica ca se genereaza ok si ca are sens
     all_moves = [curr_node.state.san(i) for i in list(curr_node.state.legal_moves)]
 
     for i in all_moves:
@@ -142,7 +145,13 @@ board = chess.Board()
 terminal = False
 nodes = []
 
+# intelege cand se opreste?
+
 #alb e cu litere mici
+
+#metoda player vs bot
+
+#metoda bot vs bot 
 while not terminal:
     all_moves = env.legal_moves
     root = node()
