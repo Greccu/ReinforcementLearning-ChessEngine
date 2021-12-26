@@ -96,7 +96,6 @@ def rollback(curr_node,reward):
     return curr_node
 
 def mcts_pred(curr_node,over,white,iterations=10):
-    #VEZI DACA POTI SCHIMBA PE AICI
     if(over):
         return -1
     all_moves = [curr_node.state.san(i) for i in list(curr_node.state.legal_moves)]
@@ -153,7 +152,7 @@ class node:
 #metoda player vs bot
 
 #player is black
-def player_vs_bot():
+def bot_vs_player():
     env.reset()
     whites_turn = True
     moves = 0
@@ -212,22 +211,30 @@ def bot_vs_bot():
         root.state = board
         root.white = whites_turn
 
-        result = mcts_pred(root,board.is_game_over(),whites_turn)
+        result = mcts_pred(root,board.is_game_over(),whites_turn,iterations=1000)
         root.action = str(board.parse_san(result))
         
-        print(env.render())
         print("\n"*10)
         nodes.append(root)
+
+        # print(board.is_stalemate())
+        # print(board.can_claim_fifty_moves())
+        # print(board.can_claim_draw())
         
         board,reward,terminal,info = env.step(board.parse_san(result))
         whites_turn = bool(1-whites_turn)
         moves+=1
+        print(env.render())
         if (terminal):
             print(reward)
     
-player_vs_bot()
-    
+bot_vs_bot()
 
+
+#Agent
+
+agent = MonteCarlo_BJAgent(env)
+agent.mc_control_glie(n_episode=50, firstVisit=False)
 
 
 
