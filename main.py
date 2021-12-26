@@ -64,7 +64,8 @@ def rollout(curr_node):
 
     # verifica ca se genereaza ok si ca are sens
     all_moves = [curr_node.state.san(i) for i in list(curr_node.state.legal_moves)]
-
+    
+    # generaza toate miscarile posibile
     for i in all_moves:
         tmp_state = chess.Board(curr_node.state.fen())
         tmp_state.push_san(i)
@@ -74,7 +75,7 @@ def rollout(curr_node):
         child.parent = curr_node
         curr_node.children.add(child)
 
-
+    # alege miscare random
     rnd_state = random.choice(list(curr_node.children))
 
     return rollout(rnd_state)
@@ -95,6 +96,7 @@ def rollback(curr_node,reward):
     return curr_node
 
 def mcts_pred(curr_node,over,white,iterations=10):
+    #VEZI DACA POTI SCHIMBA PE AICI
     if(over):
         return -1
     all_moves = [curr_node.state.san(i) for i in list(curr_node.state.legal_moves)]
@@ -109,6 +111,7 @@ def mcts_pred(curr_node,over,white,iterations=10):
         curr_node.children.add(child)
         map_state_move[child] = move
 
+    #extending the best node by ucb
     while(iterations>0):
             #selecting node to expand
             sel_child = selection(curr_node)
@@ -117,8 +120,10 @@ def mcts_pred(curr_node,over,white,iterations=10):
             reward,state = rollout(ex_child)
             curr_node = rollback(state,reward)
             iterations-=1
-
-    sel_move = map_state_move[list(curr_node.children)[np.argmax([ucb1(child) for child in curr_node.children])]]
+            
+    #choosing next state
+    child_list = list(curr_node.children)
+    sel_move = map_state_move[child_list[np.argmax([ucb1(child) for child in child_list])]]
     return sel_move
 
 
@@ -138,12 +143,8 @@ class node:
 
 
 #init
-env.reset()
-whites_turn = True
-moves = 0
-board = chess.Board()
-terminal = False
-nodes = []
+
+
 
 # intelege cand se opreste?
 
@@ -151,24 +152,80 @@ nodes = []
 
 #metoda player vs bot
 
-#metoda bot vs bot 
-while not terminal:
-    all_moves = env.legal_moves
-    root = node()
-    root.state = board
-    root.white = whites_turn
+#player is black
+def player_vs_bot():
+    env.reset()
+    whites_turn = True
+    moves = 0
+    board = chess.Board()
+    terminal = False
+    nodes = []
+    
+    while not terminal:
+        #bot move
+        root = node()
+        root.state = board
+        root.white = whites_turn
 
-    result = mcts_pred(root,board.is_game_over(),whites_turn)
-    root.action = str(board.parse_san(result))
+        result = mcts_pred(root,board.is_game_over(),whites_turn)
+        root.action = str(board.parse_san(result))
+        
+        print("\n"*10)
+        nodes.append(root)
+        
+        board,reward,terminal,info = env.step(board.parse_san(result))
+        whites_turn = True
+        moves+=1
+        
+        print(env.render())
+        
+        if (terminal):
+            break
+        #player move
+        # E NEGRU
+        while (True):
+            move = input("Enter your move: (ex: g2g4 moves the piece from g2 to g4) \n")
+            print(env.legal_moves)
+            if (not chess.Move.from_uci(move) in env.legal_moves):
+                move = input("Incorrect move: \n")
+            else:
+                break
+        board,reward,terminal,info = env.step(board.parse_uci(move))
+        env.render()
+        moves+=1
     
-    print(env.render())
-    print("\n"*10)
-    nodes.append(root)
+        if (terminal):
+            print(reward)
     
-    board,reward,terminal,info = env.step(board.parse_san(result))
-    whites_turn = 1-whites_turn
-    moves+=1
+
+#metoda bot vs bot 
+def bot_vs_bot():
     
+    env.reset()
+    whites_turn = True
+    moves = 0
+    board = chess.Board()
+    terminal = False
+    nodes = []
+    while not terminal:
+        root = node()
+        root.state = board
+        root.white = whites_turn
+
+        result = mcts_pred(root,board.is_game_over(),whites_turn)
+        root.action = str(board.parse_san(result))
+        
+        print(env.render())
+        print("\n"*10)
+        nodes.append(root)
+        
+        board,reward,terminal,info = env.step(board.parse_san(result))
+        whites_turn = bool(1-whites_turn)
+        moves+=1
+        if (terminal):
+            print(reward)
+    
+player_vs_bot()
     
 
 
