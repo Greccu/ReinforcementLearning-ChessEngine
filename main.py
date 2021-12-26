@@ -10,6 +10,8 @@ from math import log,sqrt,e,inf
 
 from paprika import *
 
+from ChessAgent import ChessAgent
+
 env = gym.make('Chess-v0')
 
 # chess-v0 usage
@@ -211,7 +213,7 @@ def bot_vs_bot():
         root.state = board
         root.white = whites_turn
 
-        result = mcts_pred(root,board.is_game_over(),whites_turn,iterations=1000)
+        result = mcts_pred(root,board.is_game_over(),whites_turn)
         root.action = str(board.parse_san(result))
         
         print("\n"*10)
@@ -227,15 +229,12 @@ def bot_vs_bot():
         print(env.render())
         if (terminal):
             print(reward)
-    
-bot_vs_bot()
 
 
 #Agent
 
-agent = MonteCarlo_BJAgent(env)
-agent.mc_control_glie(n_episode=50, firstVisit=False)
-
+agent = ChessAgent(env,exploration_constant=2)
+print(agent.run_episode())
 
 
 
