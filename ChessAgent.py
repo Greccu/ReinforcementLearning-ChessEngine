@@ -134,6 +134,7 @@ class ChessAgent:
 
     # bot_vs_bot
     def run_episode(self):
+        print("Running episode")
         self.env.reset()
         whites_turn = True
         moves = 0
@@ -158,10 +159,74 @@ class ChessAgent:
             board, reward, terminal, info = self.env.step(board.parse_san(result))
             whites_turn = bool(1 - whites_turn)
             moves += 1
+            print(f'Move: {(moves + 1)//2}\n\n')
+            if moves/2 != moves//2:
+                print('White to move')
+            else:
+                print('Black to move')
             print(self.env.render())
+            
+            if board.is_stalemate():
+                print("Draw by stalemate")
+                terminal = True
+            elif board.can_claim_fifty_moves():
+                print('Draw by 50 Move Rule')
+                terminal = True
             if (terminal):
                 return reward
 
+    def bot_vs_player(self):
+        print("Game started")
+        self.env.reset()
+        whites_turn = True
+        moves = 0
+        board = chess.Board()
+        terminal = False
+        nodes = []
+        
+        while not terminal:
+            #bot move
+            root = node()
+            root.state = board
+            root.white = whites_turn
+
+            result = self.mcts_pred(root,board.is_game_over(),whites_turn)
+            root.action = str(board.parse_san(result))
+            
+            print("\n"*10)
+            nodes.append(root)
+            
+            board,reward,terminal,info = self.env.step(board.parse_san(result))
+            whites_turn = True
+            moves+=1
+            
+            print(self.env.render())
+            
+            if (terminal):
+                break
+            #player move
+            # E NEGRU
+            while (True):
+                print('Legal moves:', self.env.legal_moves)
+                move = input("Enter your move: (ex: g2g4 moves the piece from g2 to g4) \n")
+                if (not chess.Move.from_uci(move) in self.env.legal_moves):
+                    move = input("Incorrect/illegal move: \n")
+                else:
+                    break
+            board,reward,terminal,info = self.env.step(board.parse_uci(move))
+            self.env.render()
+            moves+=1
+            print(f'Move: {moves//2}\n\n')
+            print(self.env.render())
+            
+            if board.is_stalemate():
+                print("Draw by stalemate")
+                terminal = True
+            elif board.can_claim_fifty_moves():
+                print('Draw by 50 Move Rule')
+                terminal = True
+            if (terminal):
+                print(reward)
 
     def update_policy_q(self, eps=None):
         return
