@@ -102,7 +102,7 @@ class ChessAgent:
         return curr_node
 
     # mcts_pred
-    def mcts_pred(self, curr_node, over, white, iterations=10):
+    def mcts_pred(self, curr_node, over, white, iterations=1):
         if (over):
             return -1
         all_moves = [curr_node.state.san(i) for i in list(curr_node.state.legal_moves)]
@@ -150,13 +150,15 @@ class ChessAgent:
             root.action = str(board.parse_san(result))
 
             print("\n" * 10)
-            nodes.append(root)
+            # poate iti trebuie pentru run_episode sa returnezi
+            # nodes.append(root)
 
             # print(board.is_stalemate())
             # print(board.can_claim_fifty_moves())
             # print(board.can_claim_draw())
-
+            
             board, reward, terminal, info = self.env.step(board.parse_san(result))
+            print("OUT")
             whites_turn = bool(1 - whites_turn)
             moves += 1
             print(f'Move: {(moves + 1)//2}\n\n')
