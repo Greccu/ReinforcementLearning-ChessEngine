@@ -1,3 +1,4 @@
+from time import time
 import numpy as np
 from collections import defaultdict
 import sys
@@ -16,8 +17,6 @@ from math import log, sqrt, e, inf
 import chess.engine
 import chess
 
-warnings.filterwarnings("ignore")
-
 
 class node:
     def __init__(self):
@@ -30,6 +29,9 @@ class node:
         self.visits = 0
         self.exploitation = 0
 
+    def __repr__(self) -> str:
+        return str(self.state)+"\n"+str(self.white)
+
 
 class ChessAgent:
     def __init__(self, env, exploration_constant):
@@ -39,7 +41,6 @@ class ChessAgent:
     def ucb1(self, curr_node):
         return curr_node.exploitation + self.exploration_constant * (
             sqrt(log(curr_node.parentVisits + e + (10 ** -6)) / (curr_node.visits + (10 ** -10))))
-
 
     def load_agent(self):
         pass
@@ -52,6 +53,7 @@ class ChessAgent:
         return sel_node
 
     def rollout(self, curr_node):
+        # print(curr_node.white)
 
         if (curr_node.state.is_game_over()):
             # print(curr_node.white)
@@ -59,23 +61,25 @@ class ChessAgent:
             # print(curr_node.state.result())
 
             board = curr_node.state
-            if (curr_node.white):
+            if (curr_node.white == True):
+
                 if (board.result() == '1-0'):
                     return (-1, curr_node)
                 elif (board.result() == '0-1'):
-                    return (1, curr_node)
+                    return (10, curr_node)
                 else:
                     return (0.5, curr_node)
             else:
                 if (board.result() == '1-0'):
-                    return (1, curr_node)
+                    return (10, curr_node)
                 elif (board.result() == '0-1'):
                     return (-1, curr_node)
                 else:
                     return (0.5, curr_node)
 
-        # verifica ca se genereaza ok si ca are sens
-        all_moves = [curr_node.state.san(i) for i in list(curr_node.state.legal_moves)]
+        #  de verificat : verifica ca se genereaza ok si ca are sens
+        all_moves = [curr_node.state.san(i)
+                     for i in list(curr_node.state.legal_moves)]
 
         # generaza toate miscarile posibile
         for i in all_moves:
@@ -90,11 +94,15 @@ class ChessAgent:
         # alege miscare random
         rnd_state = random.choice(list(curr_node.children))
 
+        # incearca sa alegi cea mai buna miscare
+        next_state = self.selection(curr_node)
+
         return self.rollout(rnd_state)
 
     def expand(self, curr_node, white):
         if (len(curr_node.children) == 0):
             return curr_node
+        # daca nodul ales a mai fost parcurs si are copii mergem pana la ultimul nivel alegand copii cei mai buni dupa ucb1
         return self.expand(self.selection(curr_node), white)
 
     def rollback(self, curr_node, reward):
@@ -106,11 +114,14 @@ class ChessAgent:
         return curr_node
 
     # mcts_pred
-    def mcts_pred(self, curr_node, over, white, iterations=20):
+    def mcts_pred(self, curr_node, over, white, iterations=15):
+        print(curr_node)
         if (over):
             return -1
-        all_moves = [curr_node.state.san(i) for i in list(curr_node.state.legal_moves)]
+        all_moves = [curr_node.state.san(i)
+                     for i in list(curr_node.state.legal_moves)]
         map_state_move = dict()
+        # creem array cu noduri cu board-ul dupa fiecare miscare
 
         for move in all_moves:
             tmp_state = chess.Board(curr_node.state.fen())
@@ -118,6 +129,7 @@ class ChessAgent:
             child = node()
             child.state = tmp_state
             child.parent = curr_node
+            child.white = curr_node.white
             curr_node.children.add(child)
             map_state_move[child] = move
 
@@ -125,15 +137,24 @@ class ChessAgent:
         while (iterations > 0):
             # selecting node to expand
             sel_child = self.selection(curr_node)
-
+            # coboram pana la ultimul copil pe care l ar putea avea
             ex_child = self.expand(sel_child, white)
+            #
             reward, state = self.rollout(ex_child)
             curr_node = self.rollback(state, reward)
             iterations -= 1
 
         # choosing next state
         child_list = list(curr_node.children)
-        sel_move = map_state_move[child_list[np.argmax([self.ucb1(child) for child in child_list])]]
+        sel_move = map_state_move[child_list[np.argmax(
+            [self.ucb1(child) for child in child_list])]]
+        for child in child_list:
+            if (child.exploitation != 0 or child.visits != 0 or child.parentVisits != 0):
+                print(child_list.index(child))
+                print(child.state)
+                print(self.ucb1(child))
+                print(child.exploitation, child.visits, child.parentVisits)
+        # primul din lista e mereu vizitat de 20 de ori, numarul de iteratii
         return sel_move
 
     # bot_vs_bot
@@ -143,7 +164,7 @@ class ChessAgent:
         whites_turn = True
         moves = 0
         pgn = []
-        f = open("game.txt","w")
+        f = open("game.txt", "w")
         board = chess.Board()
         terminal = False
         nodes = []
@@ -162,8 +183,9 @@ class ChessAgent:
             # print(board.is_stalemate())
             # print(board.can_claim_fifty_moves())
             # print(board.can_claim_draw())
-            
-            board, reward, terminal, info = self.env.step(board.parse_san(result))
+
+            board, reward, terminal, info = self.env.step(
+                board.parse_san(result))
             # print("OUT")
             whites_turn = bool(1 - whites_turn)
             moves += 1
@@ -176,7 +198,7 @@ class ChessAgent:
             print(f"Move made: {result}\n")
             f.write(f'{(moves + 1)//2}. {result} ')
             print(self.env.render())
-            
+
             if board.is_stalemate():
                 print("Draw by stalemate")
                 terminal = True
@@ -201,42 +223,45 @@ class ChessAgent:
         board = chess.Board()
         terminal = False
         nodes = []
-        
+
         while not terminal:
-            #bot move
+            # bot move
             root = node()
             root.state = board
             root.white = whites_turn
 
-            result = self.mcts_pred(root,board.is_game_over(),whites_turn)
+            result = self.mcts_pred(root, board.is_game_over(), whites_turn)
             root.action = str(board.parse_san(result))
-            
+
             print("\n"*10)
             nodes.append(root)
-            
-            board,reward,terminal,info = self.env.step(board.parse_san(result))
+
+            board, reward, terminal, info = self.env.step(
+                board.parse_san(result))
             whites_turn = True
-            moves+=1
-            
+            moves += 1
+
             print(self.env.render())
-            
+
             if (terminal):
                 break
-            #player move
+            # player move
             # E NEGRU
             while (True):
                 print('Legal moves:', self.env.legal_moves)
-                move = input("Enter your move: (ex: g2g4 moves the piece from g2 to g4) \n")
+                move = input(
+                    "Enter your move: (ex: g2g4 moves the piece from g2 to g4) \n")
                 if (not chess.Move.from_uci(move) in self.env.legal_moves):
                     move = input("Incorrect/illegal move: \n")
                 else:
                     break
-            board,reward,terminal,info = self.env.step(board.parse_uci(move))
+            board, reward, terminal, info = self.env.step(
+                board.parse_uci(move))
             self.env.render()
-            moves+=1
+            moves += 1
             print(f'Move: {moves//2}\n\n')
             print(self.env.render())
-            
+
             if board.is_stalemate():
                 print("Draw by stalemate")
                 terminal = True

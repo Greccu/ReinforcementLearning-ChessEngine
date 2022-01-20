@@ -6,7 +6,7 @@ import numpy as np
 import chess.engine
 import chess
 from treelib import Node, Tree
-from math import log,sqrt,e,inf
+from math import log, sqrt, e, inf
 from paprika import *
 
 from ChessAgent import ChessAgent
@@ -14,24 +14,20 @@ from ChessAgent import ChessAgent
 env = gym.make('Chess-v0')
 
 
-#init
-
+# init
 
 
 # intelege cand se opreste?
 
-#alb e cu litere mici
+# alb e cu litere mici
 
-#metoda player vs bot
+# metoda player vs bot
 
 #player is black
 
 
-
-agent = ChessAgent(env,exploration_constant=2)
+agent = ChessAgent(env, exploration_constant=2)
 print(agent.run_episode())
-
-
 
 
 # environment : Chess Table
