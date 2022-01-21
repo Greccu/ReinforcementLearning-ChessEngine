@@ -136,6 +136,10 @@ class ChessAgent:
             child.white = curr_node.white
             curr_node.children.add(child)
             map_state_move[child] = move
+        # negru face miscari random
+        if (curr_node.white == False):
+            print("Negru face random")
+            return random.choice(list(all_moves))
 
         # iterate over all moves + once
         # (so that if every node has not been explored, they will be, and choose out of them)
