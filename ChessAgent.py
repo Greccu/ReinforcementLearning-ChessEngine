@@ -38,16 +38,20 @@ class ChessAgent:
         self.env = env
         self.exploration_constant = exploration_constant
 
-    def ucb1(self, curr_node):
+    def ucb1(self, curr_node, parentVisits):
+        if (curr_node.visits == 0):
+            return float('inf')
         return curr_node.exploitation + self.exploration_constant * (
-            sqrt(log(curr_node.parentVisits + e + (10 ** -6)) / (curr_node.visits + (10 ** -10))))
+            sqrt(log(curr_node.visits + e + (10 ** -6)) / (parentVisits + (10 ** -10))))
+        # return (curr_node.exploitation / curr_node.visits + 1.41 * sqrt(log(parentVisits) / curr_node.visits))
 
     def load_agent(self):
         pass
 
     # choose best child
     def selection(self, curr_node):
-        children_ucbs = [self.ucb1(child) for child in curr_node.children]
+        children_ucbs = [self.ucb1(child, curr_node.visits)
+                         for child in curr_node.children]
         sel_node = None
         sel_node = list(curr_node.children)[np.argmax(children_ucbs)]
         return sel_node
@@ -66,12 +70,12 @@ class ChessAgent:
                 if (board.result() == '1-0'):
                     return (-1, curr_node)
                 elif (board.result() == '0-1'):
-                    return (10, curr_node)
+                    return (1, curr_node)
                 else:
                     return (0.5, curr_node)
             else:
                 if (board.result() == '1-0'):
-                    return (10, curr_node)
+                    return (1, curr_node)
                 elif (board.result() == '0-1'):
                     return (-1, curr_node)
                 else:
@@ -105,11 +109,11 @@ class ChessAgent:
         # daca nodul ales a mai fost parcurs si are copii mergem pana la ultimul nivel alegand copii cei mai buni dupa ucb1
         return self.expand(self.selection(curr_node), white)
 
+    # this has to be changed
     def rollback(self, curr_node, reward):
-        curr_node.visits += 1
-        curr_node.exploitation += reward
         while (curr_node.parent != None):
-            curr_node.parentVisits += 1
+            curr_node.visits += 1
+            curr_node.exploitation += reward
             curr_node = curr_node.parent
         return curr_node
 
@@ -133,6 +137,14 @@ class ChessAgent:
             curr_node.children.add(child)
             map_state_move[child] = move
 
+        # iterate over all moves + once
+        # (so that if every node has not been explored, they will be, and choose out of them)
+        neparcursi = 0
+        for k in curr_node.children:
+            if (k.visits == 0):
+                neparcursi += 1
+        iterations = neparcursi+1
+        #iterations = len(all_moves)+1
         # extending the best node by ucb
         while (iterations > 0):
             # selecting node to expand
@@ -146,14 +158,14 @@ class ChessAgent:
 
         # choosing next state
         child_list = list(curr_node.children)
+        print("Lungime lista:")
+        print(len(child_list))
         sel_move = map_state_move[child_list[np.argmax(
-            [self.ucb1(child) for child in child_list])]]
-        for child in child_list:
-            if (child.exploitation != 0 or child.visits != 0 or child.parentVisits != 0):
-                print(child_list.index(child))
-                print(child.state)
-                print(self.ucb1(child))
-                print(child.exploitation, child.visits, child.parentVisits)
+            [self.ucb1(child, curr_node.visits) for child in child_list])]]
+
+        print(np.argmax(
+            [self.ucb1(child, curr_node.visits) for child in child_list]))
+
         # primul din lista e mereu vizitat de 20 de ori, numarul de iteratii
         return sel_move
 

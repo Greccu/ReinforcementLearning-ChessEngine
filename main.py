@@ -44,7 +44,7 @@ print(agent.run_episode())
 
 # implementare
 # https://github.com/Ish2K/Chess-Bot-AI-Algorithms/blob/main/Git_chess/monte_carlo_implementation.py
-
+# https://www.baeldung.com/java-monte-carlo-tree-search
 
 # Other
 
