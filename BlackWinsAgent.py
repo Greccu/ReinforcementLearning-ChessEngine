@@ -15,7 +15,7 @@ import chess
 from treelib import Node, Tree
 from math import log, sqrt, e, inf
 from paprika import *
-
+import time
 
 class node():
     def __init__(self):
@@ -143,12 +143,19 @@ class ChessAgent:
         self.env.reset()
         whites_turn = True
         moves = 0
+        total_time = 0
         pgn = []
-        f = open("game.txt", "w")
+        game_file = open("game.txt", "w")
+        nr_moves_file = open("nmoves.txt","a")
+        move_duration_file = open("tmoves.txt", "a")
+        results_file = open("results.txt", "a")
+        move_dfg = open("gametime.txt","w")
         board = chess.Board()
         terminal = False
         nodes = []
         while not terminal:
+            start_time = time.time()
+
             root = node()
             root.state = board
             root.white = whites_turn
@@ -176,7 +183,7 @@ class ChessAgent:
                 print('Black to move\n')
 
             print(f"Move made: {result}\n")
-            f.write(f'{(moves + 1)//2}. {result} ')
+            game_file.write(f'{(moves + 1)//2}. {result} ')
             print(self.env.render())
 
             if board.is_stalemate():
@@ -191,11 +198,23 @@ class ChessAgent:
             elif board.can_claim_fifty_moves():
                 print('Draw by 50 Move Rule')
                 terminal = True
+            move_time = time.time() - start_time
+            if whites_turn == False:
+                move_dfg.write(f'{move_time} ')
+                total_time += move_time
             if (terminal):
-                f.close()
+                move_duration_file.write(f'{total_time/((moves + 1)//2)}\n')
+                nr_moves_file.write(f'{(moves + 1)//2}\n')
+                results_file.write(f'{reward}\n')
+                game_file.close()
+                move_duration_file.close()
+                results_file.close()
+                nr_moves_file.close()
+                move_dfg.close()
                 if (reward == -1.0):
                     print("Black won")
                 return reward
+            
 
     #player is white
     def bot_vs_player(self):
@@ -260,5 +279,5 @@ env = gym.make('Chess-v0')
 # Black should win
 
 agent = ChessAgent(env, exploration_constant=2)
-# print(agent.run_episode())
-print(agent.bot_vs_player())
+print(agent.run_episode())
+
